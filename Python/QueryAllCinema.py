@@ -148,4 +148,4 @@ if all_results:
 
     logging.info(f"Results exported and columns adjusted in {excel_file}")
 else:
-    logging.info("No results to export. :D")
+    logging.info("No results to export")
