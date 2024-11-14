@@ -17,11 +17,15 @@ connection_string = f'DRIVER={driver};SERVER={server};DATABASE={database};UID={u
 # Connect to SQL Server
 conn = pyodbc.connect(connection_string, timeout=120)
 
+# variables for date
+from_date = 'DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE())-1, 0)'
+to_date = 'DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()), 0)'
+
 # SQL Query
-query_tondau = '''
+query_tondau = f'''
     declare @fromdate datetime, @todate datetime
-    set @fromdate = DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE())-1, 0)
-    set @todate = DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()), 0)
+    set @fromdate = {from_date}
+    set @todate = {to_date}
 
     select memberId,VStock_strBookletIdent,e.sName StockLocation,f.sName IssuedLocation,Stock_strBarcode, nVoucherCode, Stock_dtmCreated ,dIssuedDate, dExpiryDate, dRedeemedDate, 
     case when dRedeemedDate is not null then 'Redeemed' 
@@ -40,10 +44,10 @@ query_tondau = '''
     and (dExpiryDate >=  cast(cast(getdate() as date) as datetime) or dExpiryDate is null)
 '''
 
-query_nhap = '''
+query_nhap = f'''
     declare @fromdate datetime, @todate datetime
-    set @fromdate = DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE())-1, 0)
-    set @todate = DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()), 0)
+    set @fromdate = {from_date}
+    set @todate = {to_date}
 
     select memberId,VStock_strBookletIdent,e.sName StockLocation,f.sName IssuedLocation,Stock_strBarcode, nVoucherCode, Stock_dtmCreated ,dIssuedDate, dExpiryDate, dRedeemedDate, 
     case when dRedeemedDate is not null then 'Redeemed' 
@@ -60,10 +64,10 @@ query_nhap = '''
     and Stock_dtmCreated < @todate
 '''
 
-query_xuat = '''
+query_xuat = f'''
     declare @fromdate datetime, @todate datetime
-    set @fromdate = DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE())-1, 0)
-    set @todate = DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()), 0)
+    set @fromdate = {from_date}
+    set @todate = {to_date}
 
     select memberId,VStock_strBookletIdent,e.sName StockLocation,f.sName IssuedLocation,Stock_strBarcode, nVoucherCode, Stock_dtmCreated ,dIssuedDate, dExpiryDate, dRedeemedDate, 
     case when dRedeemedDate is not null then 'Redeemed' 
@@ -80,10 +84,10 @@ query_xuat = '''
     and dIssuedDate < @todate
 '''
 
-query_toncuoi = '''
+query_toncuoi = f'''
     declare @fromdate datetime, @todate datetime
-    set @fromdate = DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE())-1, 0)
-    set @todate = DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()), 0)
+    set @fromdate = {from_date}
+    set @todate = {to_date}
 
     select memberId,VStock_strBookletIdent,e.sName StockLocation,f.sName IssuedLocation,Stock_strBarcode, nVoucherCode, Stock_dtmCreated ,dIssuedDate, dExpiryDate, dRedeemedDate, 
     case when dRedeemedDate is not null then 'Redeemed' 
