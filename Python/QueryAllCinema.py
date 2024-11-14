@@ -40,46 +40,15 @@ servers = [
 
 # SQL query (modify as needed)
 query = """
-select  
-CinOperator_strHOOperatorCode cinema,
-format(TransT_dtmDateTime, 'yyyy-MM') yearMonth,
-case when User_intUserNo < 0 then 'Online' else 'Offline' end Channel,
-sum(TransT_intNoOfSeats) admits,
-count(distinct TransT_lgnNumber) total_trans_bo,
-0 as total_trans_co,
-0 as total_co
-from tblTrans_Ticket a 
-join (
-select distinct Session_lngSessionId
-from tblSession
-where (Session_intSeatsSold*100.0 / (Session_intSeatsAvail	+ Session_intSeatsSold)) >= 80
-and Session_dtmRealShow >= '2022-01-01 00:00:00.000'
-) b on a.Session_lngSessionId = b.Session_lngSessionId
-join tblCinema_Operator c on a.CinOperator_strCode = c.CinOperator_strCode
-where a.TransT_strStatus = 'V'
-group by format(TransT_dtmDateTime, 'yyyy-MM'),case when User_intUserNo < 0 then 'Online' else 'Offline' end,CinOperator_strHOOperatorCode
+declare @cinema nvarchar(100)
+select @cinema = CinOperator_strHOOperatorCode from tblCinema_Operator
 
-union all 
-
-select CinOperator_strHOOperatorCode cinema,format(TransI_dtmDateTime, 'yyyy-MM') yearMonth,case when User_intUserNo < 0 then 'Online' else 'Offline' end Channel,
-0 as admits,
-0 as total_trans_bo,
-count(distinct TransI_lgnNumber) total_trans_co, sum(TransI_decActualNoOfItems) total_co
-from tblTrans_Inventory c 
-join (select distinct TransT_lgnNumber 
-from tblTrans_Ticket a 
-join (
-select distinct Session_lngSessionId
-from tblSession
-where (Session_intSeatsSold*100.0 / (Session_intSeatsAvail	+ Session_intSeatsSold)) >= 80
-and Session_dtmRealShow >= '2022-01-01 00:00:00.000'
-) b on a.Session_lngSessionId = b.Session_lngSessionId
-where a.TransT_strStatus = 'V') ctv on c.TransI_lgnNumber = ctv.TransT_lgnNumber
-join tblCinema_Operator d on c.CinOperator_strCode = d.CinOperator_strCode
-where TransI_strType = 'S'
-group by case when User_intUserNo < 0 then 'Online' else 'Offline' end ,CinOperator_strHOOperatorCode,format(TransI_dtmDateTime, 'yyyy-MM')
-
-
+select @cinema rap,Item_strMasterItemCode,Item_curRetailPrice from tblItem
+where Item_strMasterItemCode in
+('HOICBF1BSTDVOU',
+'HOICBF1BSTDKV1',
+'HOICBF2BSTDVOU',
+'HOICBF2BSTDKV1')
 
         """ #Query
 
@@ -121,7 +90,7 @@ if all_results:
     combined_df = pd.concat(all_results, ignore_index=True)
 
     # Write the DataFrame to an Excel file
-    excel_file = 'E:\\dataanalysis.xlsx'
+    excel_file = 'E:\\checkgia.xlsx'
     combined_df.to_excel(excel_file, index=False)
 
     # Load the workbook and get the active sheet
