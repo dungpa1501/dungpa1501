@@ -3,6 +3,7 @@ import pandas as pd
 from openpyxl import Workbook
 from openpyxl.styles import PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
+from datetime import datetime, timedelta
 
 # SQL Server connection details
 server = '192.168.115.3'
@@ -20,6 +21,7 @@ conn = pyodbc.connect(connection_string, timeout=120)
 # variables for date
 from_date = 'DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE())-1, 0)'
 to_date = 'DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()), 0)'
+last_month = (datetime.today().replace(day=1) - timedelta(days=1)).strftime("%m%Y")
 
 # SQL Query
 query_tondau = f'''
@@ -27,21 +29,27 @@ query_tondau = f'''
     set @fromdate = {from_date}
     set @todate = {to_date}
 
-    select memberId,VStock_strBookletIdent,e.sName StockLocation,f.sName IssuedLocation,Stock_strBarcode, nVoucherCode, Stock_dtmCreated ,dIssuedDate, dExpiryDate, dRedeemedDate, 
+    select memberId,VStock_strBookletIdent,e.sName StockLocation,f.sName IssuedLocation,Stock_strBarcode, nVoucherCode, Stock_dtmCreated ,dIssuedDate, a.dExpiryDate, dRedeemedDate, 
     case when dRedeemedDate is not null then 'Redeemed' 
-        when dExpiryDate < cast(cast(getdate() as date) as datetime) then 'Expired'
-        else 'Usable' end status
+        when a.dExpiryDate < cast(cast(getdate() as date) as datetime) then 'Expired'
+        else 'Usable' end status,
+    ClientOrder_strName,
+    co.lID,
+    cl.sName		
     from tblStock a 
     left join tblRedeemed b on a.lVoucherTypeID = b.lVoucherTypeID and a.lVoucherNumber = b.lVoucherNumber and a.nDuplicateNo = b.nDuplicateNo
     left join glxMemberVoucher c on a.Stock_strBarcode = c.voucherCode
-    join tblVoucherType d on a.lVoucherTypeID = d.lID
-	left join tblLocation e on a.lStockLocationID = e.lID
-	left join tblLocation f on a.lIssuedLocationID = f.lID				    
+    left join tblClientOrderItem cli on cli.lID = a.lClientOrderItemID
+    left join tblClientOrder co on cli.lClientOrderID = co.lID
+    left join tblClient cl on co.lClientID = cl.lID
+    left join tblVoucherType d on a.lVoucherTypeID = d.lID
+    left join tblLocation e on a.lStockLocationID = e.lID
+    left join tblLocation f on a.lIssuedLocationID = f.lID   			    
     where 1=1
     and Stock_dtmCreated < @fromdate
     and dRedeemedDate is null 
     and year(dIssuedDate) = 1900
-    and (dExpiryDate >=  cast(cast(getdate() as date) as datetime) or dExpiryDate is null)
+    and (a.dExpiryDate >=  cast(cast(getdate() as date) as datetime) or a.dExpiryDate is null)
 '''
 
 query_nhap = f'''
@@ -49,16 +57,22 @@ query_nhap = f'''
     set @fromdate = {from_date}
     set @todate = {to_date}
 
-    select memberId,VStock_strBookletIdent,e.sName StockLocation,f.sName IssuedLocation,Stock_strBarcode, nVoucherCode, Stock_dtmCreated ,dIssuedDate, dExpiryDate, dRedeemedDate, 
+    select memberId,VStock_strBookletIdent,e.sName StockLocation,f.sName IssuedLocation,Stock_strBarcode, nVoucherCode, Stock_dtmCreated ,dIssuedDate, a.dExpiryDate, dRedeemedDate, 
     case when dRedeemedDate is not null then 'Redeemed' 
-        when dExpiryDate < cast(cast(getdate() as date) as datetime) then 'Expired'
-        else 'Usable' end status
+        when a.dExpiryDate < cast(cast(getdate() as date) as datetime) then 'Expired'
+        else 'Usable' end status,
+    ClientOrder_strName,
+    co.lID,
+    cl.sName	
     from tblStock a 
     left join tblRedeemed b on a.lVoucherTypeID = b.lVoucherTypeID and a.lVoucherNumber = b.lVoucherNumber and a.nDuplicateNo = b.nDuplicateNo
     left join glxMemberVoucher c on a.Stock_strBarcode = c.voucherCode
-    join tblVoucherType d on a.lVoucherTypeID = d.lID
-	left join tblLocation e on a.lStockLocationID = e.lID
-	left join tblLocation f on a.lIssuedLocationID = f.lID    
+    left join tblClientOrderItem cli on cli.lID = a.lClientOrderItemID
+    left join tblClientOrder co on cli.lClientOrderID = co.lID
+    left join tblClient cl on co.lClientID = cl.lID
+    left join tblVoucherType d on a.lVoucherTypeID = d.lID
+    left join tblLocation e on a.lStockLocationID = e.lID
+    left join tblLocation f on a.lIssuedLocationID = f.lID     
     where 1=1
     and Stock_dtmCreated >= @fromdate
     and Stock_dtmCreated < @todate
@@ -69,16 +83,22 @@ query_xuat = f'''
     set @fromdate = {from_date}
     set @todate = {to_date}
 
-    select memberId,VStock_strBookletIdent,e.sName StockLocation,f.sName IssuedLocation,Stock_strBarcode, nVoucherCode, Stock_dtmCreated ,dIssuedDate, dExpiryDate, dRedeemedDate, 
+    select memberId,VStock_strBookletIdent,e.sName StockLocation,f.sName IssuedLocation,Stock_strBarcode, nVoucherCode, Stock_dtmCreated ,dIssuedDate, a.dExpiryDate, dRedeemedDate, 
     case when dRedeemedDate is not null then 'Redeemed' 
-        when dExpiryDate < cast(cast(getdate() as date) as datetime) then 'Expired'
-        else 'Usable' end status
+        when a.dExpiryDate < cast(cast(getdate() as date) as datetime) then 'Expired'
+        else 'Usable' end status,
+    ClientOrder_strName,
+    co.lID,
+    cl.sName	    
     from tblStock a 
     left join tblRedeemed b on a.lVoucherTypeID = b.lVoucherTypeID and a.lVoucherNumber = b.lVoucherNumber and a.nDuplicateNo = b.nDuplicateNo
     left join glxMemberVoucher c on a.Stock_strBarcode = c.voucherCode
-    join tblVoucherType d on a.lVoucherTypeID = d.lID
-	left join tblLocation e on a.lStockLocationID = e.lID
-	left join tblLocation f on a.lIssuedLocationID = f.lID    
+    left join tblClientOrderItem cli on cli.lID = a.lClientOrderItemID
+    left join tblClientOrder co on cli.lClientOrderID = co.lID
+    left join tblClient cl on co.lClientID = cl.lID
+    left join tblVoucherType d on a.lVoucherTypeID = d.lID
+    left join tblLocation e on a.lStockLocationID = e.lID
+    left join tblLocation f on a.lIssuedLocationID = f.lID   
     where 1=1
     and dIssuedDate >= @fromdate
     and dIssuedDate < @todate
@@ -89,22 +109,28 @@ query_toncuoi = f'''
     set @fromdate = {from_date}
     set @todate = {to_date}
 
-    select memberId,VStock_strBookletIdent,e.sName StockLocation,f.sName IssuedLocation,Stock_strBarcode, nVoucherCode, Stock_dtmCreated ,dIssuedDate, dExpiryDate, dRedeemedDate, 
+    select memberId,VStock_strBookletIdent,e.sName StockLocation,f.sName IssuedLocation,Stock_strBarcode, nVoucherCode, Stock_dtmCreated ,dIssuedDate, a.dExpiryDate, dRedeemedDate, 
     case when dRedeemedDate is not null then 'Redeemed' 
-        when dExpiryDate < cast(cast(getdate() as date) as datetime) then 'Expired'
-        else 'Usable' end status
+        when a.dExpiryDate < cast(cast(getdate() as date) as datetime) then 'Expired'
+        else 'Usable' end status,
+    ClientOrder_strName,
+    co.lID,
+    cl.sName	
     from tblStock a 
     left join tblRedeemed b on a.lVoucherTypeID = b.lVoucherTypeID and a.lVoucherNumber = b.lVoucherNumber and a.nDuplicateNo = b.nDuplicateNo
     left join glxMemberVoucher c on a.Stock_strBarcode = c.voucherCode
-    join tblVoucherType d on a.lVoucherTypeID = d.lID
-	left join tblLocation e on a.lStockLocationID = e.lID
-	left join tblLocation f on a.lIssuedLocationID = f.lID    
+    left join tblClientOrderItem cli on cli.lID = a.lClientOrderItemID
+    left join tblClientOrder co on cli.lClientOrderID = co.lID
+    left join tblClient cl on co.lClientID = cl.lID
+    left join tblVoucherType d on a.lVoucherTypeID = d.lID
+    left join tblLocation e on a.lStockLocationID = e.lID
+    left join tblLocation f on a.lIssuedLocationID = f.lID    
     where 1=1
     --and Stock_dtmCreated >= '2024-08-01 00:00:00.000'
     and Stock_dtmCreated < @todate
     and year(dIssuedDate) = 1900
     and dRedeemedDate is null 
-    and (dExpiryDate >= cast(cast(getdate() as date) as datetime) or dExpiryDate is null)
+    and (a.dExpiryDate >= cast(cast(getdate() as date) as datetime) or a.dExpiryDate is null)
 '''
 
 
@@ -115,7 +141,7 @@ df_xuat = pd.read_sql(query_xuat, conn)
 df_toncuoi = pd.read_sql(query_toncuoi, conn)
 
 # Export the DataFrame to Excel
-with pd.ExcelWriter(r'E:\voucher_data.xlsx', engine='openpyxl') as writer:
+with pd.ExcelWriter(fr'\\GLXPWNAV01\navdata$\MonthlyVoucher\VoucherData_{last_month}.xlsx', engine='openpyxl') as writer:
     df_tondau.to_excel(writer, index=False, sheet_name='Tồn Đầu')
     df_nhap.to_excel(writer,index=False,sheet_name='Nhập')
     df_xuat.to_excel(writer,index=False,sheet_name='Xuất')
